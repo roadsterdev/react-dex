@@ -1,53 +1,148 @@
-import Slider from 'rc-slider';
-import { ChangeEvent, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo } from "react";
+import Slider from "rc-slider";
+import { ChangeEvent, useState } from "react";
 
-import { useAppContext } from '../../context/appContextProvider';
+import "rc-slider/assets/index.css";
 
-import 'rc-slider/assets/index.css';
+import { useAppContext } from "../../context/AppContext";
+import Balance from "../OrderBalance";
+import OrderButton from "../OrderButton";
+import { Order, OrderAction } from "../../types";
+import { useOrderContext } from "../../context/OrderContext";
 
-const OrderForm = ({ orderType }: { orderType: string }) => {
-  const { appState } = useAppContext()
+const OrderForm = ({ action }: { action: OrderAction }) => {
+  const { appState, appDispatch } = useAppContext();
+  const { orderType } = useOrderContext()
+
+  const isInitialPriceSet = useRef<boolean>(false);
 
   const [data, setData] = useState({
-    price: '',
-    amount: '',
-  })
+    price: 0,
+    quantity: 0,
+    total: 0,
+  });
 
-  const currentType = useMemo(() => {
-    return appState.pair.label.split('/')[0]
-  }, [appState.pair])
+  const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const price = parseFloat(e.target.value) || 0;
+    console.log(price)
+    setData((prev) => ({
+      ...prev,
+      price,
+      total: price * prev.quantity,
+    }));
+  };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlQuantityChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const quantity = parseFloat(e.target.value) || 0;
+    setData((prev) => ({
+      ...prev,
+      quantity,
+      total: quantity * prev.price,
+    }));
+  };
+
+  const handleTotalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const total = parseFloat(e.target.value) || 0;
+    setData((prev) => ({
+      ...prev,
+      total,
+      quantity: total / prev.price,
+    }));
+  };
+
+  const cantOrder = useMemo(() => {
+    return (
+      data.total === 0 ||
+      (action === "buy"
+        ? appState.balance.USDT === 0 || data.total > appState.balance.USDT
+        : appState.balance[appState.pair.ticker] === 0 ||
+          appState.balance[appState.pair.ticker] < data.quantity)
+    );
+  }, [data.total, data.quantity, appState.balance]);
+
+  const handleOrder = () => {
+    const order: Order = {
+      ...data,
+      ticker: appState.pair.ticker,
+      type: action,
+      created_date: new Date().getTime(),
+      status: orderType === 'market' || data.price === appState.current ? 'Filled' : 'Pending'
+    }
+
+    appDispatch({
+      type: 'ADD_ORDER',
+      payload: order
+    })
+
+    setData({
+      ...data,
+      quantity: 0,
+      total: 0,
+    })
+  };
+
+  useEffect(() => {
     setData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      price: appState.current ?? 0
     }))
-  }
+  }, [appState.current])
+
+  useEffect(() => {
+    if (!isInitialPriceSet.current && appState.current) {
+      setData((prev) => ({
+        ...prev,
+        price: appState.current!,
+      }));
+      isInitialPriceSet.current = true;
+    }
+  }, [appState.current]);
 
   return (
-    <div className='flex flex-col gap-4 font-semibold text-gray text-sm'>
-      <p className='text-lg text-black'>{orderType === 'buy' ? 'Buy' : 'Sell'}</p>
+    <div className="flex flex-col gap-4 font-semibold text-gray text-sm">
+      <div className="flex items-center justify-between">
+        <p className="text-lg text-black">
+          {action === "buy" ? "Buy" : "Sell"}
+        </p>
+        <Balance action={action} />
+      </div>
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
         <p className="price">Price</p>
-        <input className='border-none outline-none text-black text-right' name='price' value={data.price} onChange={handleChange} />
+        <input
+          type="number"
+          name="price"
+          className="border-none outline-none text-black text-right"
+          value={data.price}
+          onChange={handlePriceChange}
+        />
         <p className="unit">USDT</p>
       </div>
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
-        <p className="amount">Amount</p>
-        <input className='outline-none text-right text-black' name='amount' value={data.amount} onChange={handleChange}/>
-        <p className="unit">{currentType}</p>
+        <p className="quantity">Quantity</p>
+        <input
+          type="number"
+          name="quantity"
+          className="outline-none text-right text-black"
+          value={data.quantity}
+          onChange={handlQuantityChange}
+        />
+        <p className="unit">{appState.pair.ticker}</p>
       </div>
       <Slider range step={25} />
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
         <p className="price">Total</p>
-        <input className='outline-none text-right text-black'/>
+        <input
+          type="number"
+          name="total"
+          className="outline-none text-right text-black"
+          value={data.total}
+          onChange={handleTotalChange}
+        />
         <p className="unit">USDT</p>
       </div>
-      <button className={`text-white font-semibold ${orderType === 'buy' ? 'bg-green' : 'bg-red'}`}>
-        {`Limit ${orderType === 'buy' ? 'Buy' : 'Sell'} ${currentType}`}
-      </button>
+      <OrderButton action={action} onClick={handleOrder} disabled={cantOrder} />
     </div>
-  )
-}
+  );
+};
 
-export default OrderForm
+export default OrderForm;

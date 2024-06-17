@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 
 import OrderBookSection from './DataSection';
-import { useAppContext } from '../../context/appContextProvider';
+import { useAppContext } from '../../context/AppContext';
 import { socket } from '../../socket';
 import { OrderBook } from '../../types';
 

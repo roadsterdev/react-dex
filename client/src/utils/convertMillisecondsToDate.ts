@@ -1,5 +1,7 @@
-export const convertMillisecondsToDate = (ms: number) => {
-  let date = new Date(ms*1000);
+export const convertMillisecondsToDate = (ms?: number) => {
+  if (!ms) return '';
+
+  let date = new Date(ms);
 
   let year = date.getFullYear();
   let month = (date.getMonth() + 1).toString().padStart(2, '0');

@@ -1,48 +1,43 @@
-import React, { useEffect, useRef, memo } from "react";
+import { createChart } from 'lightweight-charts';
+import { useEffect, useRef } from 'react';
 
-import { useAppContext } from "../../context/appContextProvider";
+import { useSessionStorageContext } from '../../context/SessionStorageContext';
 
-const TradingViewWidget: React.FC = () => {
-  const { appState } = useAppContext()
+const Chart = () => {
+  const chartContainerRef = useRef<HTMLDivElement | null>(null)
 
-  const container = useRef<HTMLDivElement>(null);
+  const { candleSticks } = useSessionStorageContext()
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.type = "text/javascript";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: appState.pair.value,
-      interval: "D",
-      timezone: "Etc/UTC",
-      theme: "light",
-      style: "1",
-      locale: "en",
-      allow_symbol_change: true,
-      calendar: false,
-      support_host: "https://www.tradingview.com",
-    });
-    // @ts-ignore
-    while (container.current.firstChild) {
-      container.current?.removeChild(container.current.firstChild);
+    if (chartContainerRef.current) {
+      while (chartContainerRef.current.firstChild) {
+        chartContainerRef.current?.removeChild(chartContainerRef.current.firstChild);
+      }
+      const chartOptions: any = {
+        layout: {
+          textColor: 'black',
+          background: { type: 'solid', color: 'white' }
+        }
+      };
+      const chart = createChart(chartContainerRef.current, chartOptions);
+     
+      const candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      });
+
+      candlestickSeries.setData([...candleSticks]);
+
+      chart.timeScale().fitContent();
     }
-    container.current?.appendChild(script);
-  }, [appState.pair]);
+  }, [chartContainerRef, candleSticks]);
 
   return (
-    <div
-      className="tradingview-widget-container"
-      ref={container}
-      style={{ height: "500px", width: "100%" }}
-    >
-      <div
-        className="tradingview-widget-container__widget"
-      ></div>
-    </div>
+    <div id="container" ref={chartContainerRef} style={{ height: '400px', width: '100%' }}></div>
   );
 };
 
-export default memo(TradingViewWidget);
+export default Chart;
