@@ -17,7 +17,7 @@ function App() {
 
   const processGraphData = useCallback((graphData: string) => {
     const data = JSON.parse(graphData).data;
-    const lastData = Array.isArray(data) ? data[data.length - 1] : data;
+    const lastData = Array.isArray(data) ? data[0] : data;
     const current = lastData.close / 1e8;
 
     appDispatch({ type: "SET_CURRENT", payload: current });

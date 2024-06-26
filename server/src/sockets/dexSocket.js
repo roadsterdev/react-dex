@@ -30,17 +30,13 @@ dexSocket.on('message', function (ms) {
     const data = ms[0];
     if (data) {
         const { type, data: nestedData } = data;
-
-        if (type === 'graph') {
-            sendToRabbitMQ(data, type)
-            // if (Array.isArray(nestedData)) {
-            //     if (data.channel)
-            //         sendToRabbitMQ(data, type);
-            // } else {
-            //     if (data.room)
-            //         sendToRabbitMQ(data, type);
-            // }
-        } else if (type === 'book' && hasValue(nestedData)) {
+        const isGraphType = type === 'graph';
+        const isBookType = type === 'book';
+        const isCurrentPairKey = Array.isArray(nestedData) ? nestedData[0]?.pair_id === currentPairKey : nestedData.pair_id === currentPairKey;
+        
+        if (isGraphType && isCurrentPairKey) {
+            sendToRabbitMQ(data, type);
+        } else if (isBookType && hasValue(nestedData)) {
             sendToRabbitMQ(nestedData, type);
         }
     }

@@ -9,6 +9,7 @@ import Balance from "../OrderBalance";
 import OrderButton from "../OrderButton";
 import { Order, OrderAction } from "../../types";
 import { useOrderContext } from "../../context/OrderContext";
+import clsx from "clsx";
 
 const OrderForm = ({ action }: { action: OrderAction }) => {
   const { appState, appDispatch } = useAppContext();
@@ -76,6 +77,7 @@ const OrderForm = ({ action }: { action: OrderAction }) => {
 
     setData({
       ...data,
+      price: appState.current ?? 0,
       quantity: 0,
       total: 0,
     })
@@ -109,18 +111,22 @@ const OrderForm = ({ action }: { action: OrderAction }) => {
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
         <p className="price">Price</p>
         <input
-          type="number"
+          type="text"
           name="price"
-          className="border-none outline-none text-black text-right"
-          value={data.price}
+          className={clsx(
+            "border-none outline-none text-black",
+            orderType === 'market' ? 'text-center' : 'text-right'
+          )}
+          value={orderType === 'market' ? 'Market Price' : data.price}
           onChange={handlePriceChange}
+          disabled={orderType === 'market'}
         />
         <p className="unit">USDT</p>
       </div>
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
         <p className="quantity">Quantity</p>
         <input
-          type="number"
+          type="text"
           name="quantity"
           className="outline-none text-right text-black"
           value={data.quantity}
@@ -132,7 +138,7 @@ const OrderForm = ({ action }: { action: OrderAction }) => {
       <div className="flex items-center gap-2 border border-lightGray rounded-lg p-2">
         <p className="price">Total</p>
         <input
-          type="number"
+          type="text"
           name="total"
           className="outline-none text-right text-black"
           value={data.total}

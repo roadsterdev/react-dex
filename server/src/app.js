@@ -1,7 +1,6 @@
-const { server } = require('./sockets');
-require('./sockets/dexSocket');
+const server = require('./server');
 require('./sockets/clientSocket');
-
+require('./sockets/dexSocket');
 
 const { receiveFromRabbitMQ } = require('./rabbitmq');
 

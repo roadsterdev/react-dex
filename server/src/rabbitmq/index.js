@@ -1,5 +1,5 @@
 const { connectRabbitMQ } = require("./connect");
-const { clientSocket } = require("../sockets");
+const clientSocket= require("../sockets/clientSocket");
 
 const sendToRabbitMQ = (msg, type) => {
   connectRabbitMQ((channel) => {
@@ -31,16 +31,6 @@ const receiveFromRabbitMQ = () => {
       queue2,
       (msg) => {
         clientSocket.sockets.emit("graph", msg.content.toString());
-      },
-      { noAck: true }
-    );
-
-    const queue3 = "hist";
-    channel.assertQueue(queue3, { durable: false });
-    channel.consume(
-      queue3,
-      (msg) => {
-        clientSocket.sockets.emit("hist", msg.content.toString());
       },
       { noAck: true }
     );

@@ -19,7 +19,7 @@ const UserBalance = () => {
       <p className="text-sm">USDT: </p>
       <input
         type="text"
-        className="text-2xl text-red font-bold"
+        className="text-2xl text-red font-bold py-1 px-3 outline-none"
         value={appState.balance.USDT}
         onChange={handleChange}
       />
